@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoTunnel Dashboard - The open-source ngrok killer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            font-size: 1.5rem;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo p {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section h3 {
+            margin-bottom: 15px;
+            color: #4ecdc4;
+            font-size: 1.1rem;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .form-group input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(78, 205, 196, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+        }
+
+        .status-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .status-online {
+            background: #4ecdc4;
+            box-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+        }
+
+        .status-offline {
+            background: #ff6b6b;
+        }
+
+        .tunnel-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .tunnel-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .tunnel-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .tunnel-name {
+            font-weight: bold;
+            color: #4ecdc4;
+        }
+
+        .tunnel-url {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            margin: 10px 0;
+            word-break: break-all;
+        }
+
+        .log-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.8rem;
+            margin-top: 15px;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+
+        .log-info {
+            color: #4ecdc4;
+        }
+
+        .log-error {
+            color: #ff6b6b;
+        }
+
+        .log-warn {
+            color: #ffd700;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #4ecdc4;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .alert {
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+
+        .alert-success {
+            background: rgba(78, 205, 196, 0.2);
+            border: 1px solid #4ecdc4;
+            color: #4ecdc4;
+        }
+
+        .alert-error {
+            background: rgba(255, 107, 107, 0.2);
+            border: 1px solid #ff6b6b;
+            color: #ff6b6b;
+        }
+
+        .profile-list {
+            margin-top: 15px;
+        }
+
+        .profile-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .profile-item span {
+            flex: 1;
+            font-weight: bold;
+        }
+
+        .profile-item button {
+            margin-left: 10px;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #6c757d, #5a6268);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="logo">
+                <h1>🚀 GoTunnel</h1>
+                <p>The open-source ngrok killer</p>
+            </div>
+
+            <div class="section">
+                <h3>🔧 Server Configuration</h3>
+                <div class="form-group">
+                    <label for="server-port">Port</label>
+                    <input type="number" id="server-port" value="8080" min="1" max="65535">
+                </div>
+                <div class="form-group">
+                    <label for="server-token">Token</label>
+                    <input type="text" id="server-token" value="your-secret-token">
+                </div>
+                <div class="form-group">
+                    <label for="server-tls">TLS</label>
+                    <select id="server-tls">
+                        <option value="false">Disabled</option>
+                        <option value="true">Enabled</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="server-log-level">Log Level</label>
+                    <select id="server-log-level">
+                        <option value="info">Info</option>
+                        <option value="debug">Debug</option>
+                        <option value="warn">Warning</option>
+                        <option value="error">Error</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="startServer()">🚀 Start Server</button>
+                <button class="btn btn-danger" onclick="stopServer()">🛑 Stop Server</button>
+            </div>
+
+            <div class="section">
+                <h3>🔗 New Tunnel</h3>
+                <div class="form-group">
+                    <label for="client-subdomain">Subdomain</label>
+                    <input type="text" id="client-subdomain" placeholder="myapp">
+                </div>
+                <div class="form-group">
+                    <label for="client-local-port">Local Port</label>
+                    <input type="number" id="client-local-port" value="3000" min="1" max="65535">
+                </div>
+                <div class="form-group">
+                    <label for="client-local-host">Local Host</label>
+                    <input type="text" id="client-local-host" value="localhost">
+                </div>
+                <div class="form-group">
+                    <label for="client-server">Server Address</label>
+                    <input type="text" id="client-server" value="localhost:8080">
+                </div>
+                <div class="form-group">
+                    <label for="client-token">Token</label>
+                    <input type="text" id="client-token" value="your-secret-token">
+                </div>
+                <button class="btn btn-primary" onclick="startClient()">🔗 Create Tunnel</button>
+                
+                <div class="section">
+                    <h3>💾 Profiles</h3>
+                    <div class="form-group">
+                        <button class="btn btn-primary" onclick="saveProfile()">💾 Save Profile</button>
+                        <button class="btn btn-secondary" onclick="saveConfiguration()">⚙️ Save Config</button>
+                    </div>
+                    <div id="profile-list" class="profile-list">
+                        <p>No saved profiles</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="status-card">
+                <h2>📊 Dashboard</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="active-tunnels">0</div>
+                        <div class="stat-label">Active Tunnels</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="total-requests">0</div>
+                        <div class="stat-label">Total Requests</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="uptime">00:00:00</div>
+                        <div class="stat-label">Server Uptime</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="data-transferred">0 MB</div>
+                        <div class="stat-label">Data Transferred</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-card">
+                <h3>
+                    <span class="status-indicator" id="server-status-indicator"></span>
+                    Server Status
+                </h3>
+                <div id="server-status">Offline</div>
+                <div class="log-container" id="server-logs"></div>
+            </div>
+
+            <div class="section">
+                <h3>🔗 Active Tunnels</h3>
+                <div class="tunnel-list" id="tunnel-list">
+                    <div class="tunnel-card">
+                        <p>No active tunnels. Create one to get started!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        
+        let serverRunning = false;
+        let activeTunnels = new Map();
+        let startTime = null;
+
+        // Update stats
+        function updateStats() {
+            document.getElementById('active-tunnels').textContent = activeTunnels.size;
+            
+            if (startTime) {
+                const uptime = Math.floor((Date.now() - startTime) / 1000);
+                const hours = Math.floor(uptime / 3600);
+                const minutes = Math.floor((uptime % 3600) / 60);
+                const seconds = uptime % 60;
+                document.getElementById('uptime').textContent = 
+                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }
+
+        // Update server status
+        function updateServerStatus(running) {
+            serverRunning = running;
+            const indicator = document.getElementById('server-status-indicator');
+            const status = document.getElementById('server-status');
+            
+            if (running) {
+                indicator.className = 'status-indicator status-online';
+                status.textContent = 'Online';
+                if (!startTime) startTime = Date.now();
+            } else {
+                indicator.className = 'status-indicator status-offline';
+                status.textContent = 'Offline';
+                startTime = null;
+            }
+        }
+
+        // Add log entry
+        function addLogEntry(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Start server
+        async function startServer() {
+            const config = {
+                port: document.getElementById('server-port').value,
+                token: document.getElementById('server-token').value,
+                tls: document.getElementById('server-tls').value === 'true',
+                logLevel: document.getElementById('server-log-level').value
+            };
+
+            const result = await ipcRenderer.invoke('start-server', config);
+            
+            if (result.success) {
+                updateServerStatus(true);
+                addLogEntry('server-logs', result.message, 'info');
+            } else {
+                addLogEntry('server-logs', `Error: ${result.message}`, 'error');
+            }
+        }
+
+        // Stop server
+        async function stopServer() {
+            const result = await ipcRenderer.invoke('stop-server');
+            updateServerStatus(false);
+            addLogEntry('server-logs', result.message, 'info');
+        }
+
+        // Start client
+        async function startClient() {
+            const config = {
+                subdomain: document.getElementById('client-subdomain').value,
+                localPort: parseInt(document.getElementById('client-local-port').value),
+                localHost: document.getElementById('client-local-host').value,
+                server: document.getElementById('client-server').value,
+                token: document.getElementById('client-token').value,
+                tls: false
+            };
+
+            const result = await ipcRenderer.invoke('start-client', config);
+            
+            if (result.success) {
+                const tunnelUrl = await ipcRenderer.invoke('get-tunnel-url', config.subdomain);
+                activeTunnels.set(result.id, {
+                    subdomain: config.subdomain,
+                    localPort: config.localPort,
+                    url: tunnelUrl,
+                    id: result.id
+                });
+                updateTunnelList();
+                addLogEntry('server-logs', `Tunnel created: ${config.subdomain}`, 'info');
+            } else {
+                addLogEntry('server-logs', `Tunnel error: ${result.message}`, 'error');
+            }
+        }
+
+        // Update tunnel list
+        function updateTunnelList() {
+            const container = document.getElementById('tunnel-list');
+            container.innerHTML = '';
+
+            if (activeTunnels.size === 0) {
+                container.innerHTML = '<div class="tunnel-card"><p>No active tunnels. Create one to get started!</p></div>';
+                return;
+            }
+
+            activeTunnels.forEach((tunnel, id) => {
+                const card = document.createElement('div');
+                card.className = 'tunnel-card';
+                card.innerHTML = `
+                    <div class="tunnel-header">
+                        <span class="tunnel-name">${tunnel.subdomain}</span>
+                        <button class="btn btn-danger" onclick="stopTunnel('${id}')" style="width: auto; padding: 5px 10px;">Stop</button>
+                    </div>
+                    <div class="tunnel-url">${tunnel.url}</div>
+                    <p>Local: ${tunnel.localHost}:${tunnel.localPort}</p>
+                    <button class="btn btn-primary" onclick="openTunnel('${tunnel.url}')" style="margin-top: 10px;">Open in Browser</button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Stop tunnel
+        async function stopTunnel(clientId) {
+            const result = await ipcRenderer.invoke('stop-client', clientId);
+            activeTunnels.delete(clientId);
+            updateTunnelList();
+            addLogEntry('server-logs', result.message, 'info');
+        }
+
+        // Open tunnel in browser
+        async function openTunnel(url) {
+            await ipcRenderer.invoke('open-url', url);
+        }
+
+        // Load configuration
+        async function loadConfiguration() {
+            try {
+                const configPath = await ipcRenderer.invoke('get-config-path');
+                const config = await ipcRenderer.invoke('load-config', configPath);
+                
+                if (config) {
+                    document.getElementById('server-port').value = config.server?.port || 8080;
+                    document.getElementById('server-token').value = config.server?.allowed_tokens?.[0] || 'your-secret-token';
+                    document.getElementById('server-tls').value = config.server?.tls ? 'true' : 'false';
+                    document.getElementById('server-log-level').value = config.server?.log_level || 'info';
+                    
+                    document.getElementById('client-server').value = config.client?.server || 'localhost:8080';
+                    document.getElementById('client-token').value = config.client?.token || 'your-secret-token';
+                    document.getElementById('client-local-host').value = config.client?.local_host || 'localhost';
+                }
+            } catch (error) {
+                console.log('No configuration file found, using defaults');
+            }
+        }
+
+        // Save configuration
+        async function saveConfiguration() {
+            const config = {
+                server: {
+                    port: parseInt(document.getElementById('server-port').value),
+                    tls: document.getElementById('server-tls').value === 'true',
+                    allowed_tokens: [document.getElementById('server-token').value],
+                    log_level: document.getElementById('server-log-level').value
+                },
+                client: {
+                    server: document.getElementById('client-server').value,
+                    token: document.getElementById('client-token').value,
+                    local_host: document.getElementById('client-local-host').value,
+                    tls: false,
+                    log_level: 'info'
+                },
+                dashboard: {
+                    enabled: true,
+                    port: 3000
+                }
+            };
+            
+            try {
+                await ipcRenderer.invoke('save-config', config);
+                addLogEntry('server-logs', 'Configuration saved successfully', 'info');
+            } catch (error) {
+                addLogEntry('server-logs', `Failed to save configuration: ${error.message}`, 'error');
+            }
+        }
+
+        // Profile management
+        let savedProfiles = [];
+
+        async function loadProfiles() {
+            try {
+                savedProfiles = await ipcRenderer.invoke('load-profiles');
+                updateProfileList();
+            } catch (error) {
+                console.log('No saved profiles found');
+            }
+        }
+
+        function updateProfileList() {
+            const container = document.getElementById('profile-list');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            if (savedProfiles.length === 0) {
+                container.innerHTML = '<p>No saved profiles</p>';
+                return;
+            }
+            
+            savedProfiles.forEach((profile, index) => {
+                const profileDiv = document.createElement('div');
+                profileDiv.className = 'profile-item';
+                profileDiv.innerHTML = `
+                    <span>${profile.name}</span>
+                    <button onclick="loadProfile(${index})">Load</button>
+                    <button onclick="deleteProfile(${index})">Delete</button>
+                `;
+                container.appendChild(profileDiv);
+            });
+        }
+
+        async function saveProfile() {
+            const name = prompt('Enter profile name:');
+            if (!name) return;
+            
+            const profile = {
+                name: name,
+                config: {
+                    subdomain: document.getElementById('client-subdomain').value,
+                    localPort: parseInt(document.getElementById('client-local-port').value),
+                    localHost: document.getElementById('client-local-host').value,
+                    server: document.getElementById('client-server').value,
+                    token: document.getElementById('client-token').value
+                }
+            };
+            
+            try {
+                await ipcRenderer.invoke('save-profile', profile);
+                await loadProfiles();
+                addLogEntry('server-logs', `Profile "${name}" saved`, 'info');
+            } catch (error) {
+                addLogEntry('server-logs', `Failed to save profile: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadProfile(index) {
+            const profile = savedProfiles[index];
+            if (!profile) return;
+            
+            document.getElementById('client-subdomain').value = profile.config.subdomain;
+            document.getElementById('client-local-port').value = profile.config.localPort;
+            document.getElementById('client-local-host').value = profile.config.localHost;
+            document.getElementById('client-server').value = profile.config.server;
+            document.getElementById('client-token').value = profile.config.token;
+            
+            addLogEntry('server-logs', `Profile "${profile.name}" loaded`, 'info');
+        }
+
+        async function deleteProfile(index) {
+            const profile = savedProfiles[index];
+            if (!profile) return;
+            
+            if (confirm(`Delete profile "${profile.name}"?`)) {
+                try {
+                    await ipcRenderer.invoke('delete-profile', index);
+                    await loadProfiles();
+                    addLogEntry('server-logs', `Profile "${profile.name}" deleted`, 'info');
+                } catch (error) {
+                    addLogEntry('server-logs', `Failed to delete profile: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        // Event listeners
+        ipcRenderer.on('server-log', (event, data) => {
+            addLogEntry('server-logs', data.trim(), 'info');
+        });
+
+        ipcRenderer.on('server-error', (event, data) => {
+            addLogEntry('server-logs', data.trim(), 'error');
+        });
+
+        ipcRenderer.on('server-closed', (event, code) => {
+            updateServerStatus(false);
+            addLogEntry('server-logs', `Server stopped with code: ${code}`, 'warn');
+        });
+
+        ipcRenderer.on('client-log', (event, data) => {
+            addLogEntry('server-logs', `[${data.id}] ${data.data.trim()}`, 'info');
+        });
+
+        ipcRenderer.on('client-error', (event, data) => {
+            addLogEntry('server-logs', `[${data.id}] ${data.data.trim()}`, 'error');
+        });
+
+        ipcRenderer.on('client-closed', (event, data) => {
+            activeTunnels.delete(data.id);
+            updateTunnelList();
+            addLogEntry('server-logs', `Tunnel ${data.id} closed with code: ${data.code}`, 'warn');
+        });
+
+        // Update stats every second
+        setInterval(updateStats, 1000);
+
+        // Initialize
+        updateServerStatus(false);
+        updateStats();
+        loadConfiguration();
+        loadProfiles();
+    </script>
+</body>
+</html> 

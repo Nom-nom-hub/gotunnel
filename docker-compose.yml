@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  gotunnel-server:
+    build: .
+    container_name: gotunnel-server
+    ports:
+      - "443:443"
+      - "8080:8080"  # For development/testing
+    volumes:
+      - ./certs:/certs:ro
+      - ./logs:/app/logs
+    environment:
+      - ALLOWED_TOKENS=your-secret-token-here
+    command: >
+      ./gotunnel-server
+      --port 443
+      --cert /certs/cert.pem
+      --key /certs/key.pem
+      --allowed-tokens your-secret-token-here
+      --log-level info
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:443/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Nginx reverse proxy for additional features
+  nginx:
+    image: nginx:alpine
+    container_name: gotunnel-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/certs:ro
+    depends_on:
+      - gotunnel-server
+    restart: unless-stopped
+    profiles:
+      - with-nginx
+
+networks:
+  default:
+    name: gotunnel-network 
